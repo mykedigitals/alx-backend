@@ -39,32 +39,36 @@ class Server:
             }
         return self.__indexed_dataset
 
-    def get_hyper_index(self, index: int = None,
-                        page_size: int = 10) -> Dict:
-        """ return all data"""
+    def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
+        """
+        Takes 2 integer arguments and returns a dictionary with
+        the following key-value pairs:
+            index: index of the first item in the current page
+            next_index: index of the first item in the next page
+            page_size: the current page size
+            data: actual page of the dataset
+        Args:
+            index(int): first required index
+            page_size(int): required number of records per page
+        """
+        dataset = self.indexed_dataset()
+        data_length = len(dataset)
+        assert 0 <= index < data_length
+        response = {}
+        data = []
+        response['index'] = index
+        for i in range(page_size):
+            while True:
+                curr = dataset.get(index)
+                index += 1
+                if curr is not None:
+                    break
+            data.append(curr)
 
-        if index is None:
-            index = 0
-
-        # validate the index
-        assert isinstance(index, int)
-        assert 0 <= index < len(self.indexed_dataset())
-        assert isinstance(page_size, int) and page_size > 0
-
-        data = []  # collect all indexed data
-        next_index = index + page_size
-
-        for value in range(index, next_index):
-            if self.indexed_dataset().get(value):
-                data.append(self.indexed_dataset()[value])
-            else:
-                value += 1
-                next_index += 1
-
-        return {
-            'index': index,
-            'data': data,
-            'page_size': page_size,
-            'next_index': next_index
-        }
-    
+        response['data'] = data
+        response['page_size'] = len(data)
+        if dataset.get(index):
+            response['next_index'] = index
+        else:
+            response['next_index'] = None
+        return response
